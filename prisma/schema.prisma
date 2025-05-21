@@ -220,7 +220,7 @@ model Activity {
   id          String           @id @default(uuid())
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
-  type        ActivityType @default(EMAIL)
+  type        ActivityType     @default(EMAIL)
   subject     String
   description String?
   dueDate     DateTime? // Can be used for tasks/appointments
@@ -449,8 +449,8 @@ model SystemLog {
 // --- Activity Participants (for meetings/calls) ---
 model ActivityParticipant {
   id                String   @id @default(uuid())
-  activityId        String  
-  activity          Activity @relation(fields: [activityId], references: [id]) 
+  activityId        String
+  activity          Activity @relation(fields: [activityId], references: [id])
   contactId         String?
   contact           Contact? @relation(fields: [contactId], references: [id])
   userId            String?
