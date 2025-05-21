@@ -1,16 +1,51 @@
 import { PrismaClient, UserRole, ActivityType, CompanyStatus, ContactStatus, LeadStatus } from '@prisma/client';
+import { faker } from '@faker-js/faker';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
-// Helper function to generate random dates within a range
-function randomDate(start: Date, end: Date) {
-  return new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
-}
-
-// Helper function to get random item from array
+// Helper functions
 function randomItem<T>(array: T[]): T {
   return array[Math.floor(Math.random() * array.length)];
+}
+
+function generateCompanyData(createdById: string, updatedById: string) {
+  return {
+    name: faker.company.name(),
+    industry: faker.company.buzzNoun(),
+    website: faker.internet.url(),
+    phone: faker.phone.number(),
+    addressLine1: faker.location.streetAddress(),
+    addressLine2: faker.location.secondaryAddress(),
+    city: faker.location.city(),
+    state: faker.location.state(),
+    postalCode: faker.location.zipCode(),
+    country: faker.location.country(),
+    description: faker.company.catchPhrase(),
+    annualRevenue: faker.number.float({ min: 100000, max: 10000000, fractionDigits: 2 }),
+    numberOfEmployees: faker.number.int({ min: 10, max: 10000 }),
+    status: randomItem(Object.values(CompanyStatus)),
+    createdById,
+    updatedById,
+  };
+}
+
+function generateContactData(companyId: string, createdById: string, updatedById: string) {
+  const firstName = faker.person.firstName();
+  const lastName = faker.person.lastName();
+  return {
+    firstName,
+    lastName,
+    email: faker.internet.email({ firstName, lastName }),
+    phone: faker.phone.number(),
+    jobTitle: faker.person.jobTitle(),
+    leadSource: faker.helpers.arrayElement(['Website', 'Referral', 'Conference', 'Social Media', 'Direct']),
+    description: faker.lorem.paragraph(),
+    status: randomItem(Object.values(ContactStatus)),
+    companyId,
+    createdById,
+    updatedById,
+  };
 }
 
 async function main() {
@@ -37,9 +72,11 @@ async function main() {
       data: {
         email: 'admin@example.com',
         password: await bcrypt.hash('admin123', 10),
-        firstName: 'Admin',
-        lastName: 'User',
+        firstName: faker.person.firstName(),
+        lastName: faker.person.lastName(),
         role: UserRole.ADMIN,
+        phoneNumber: faker.phone.number(),
+        profilePicture: faker.image.avatar(),
       },
     }),
     prisma.user.create({
@@ -55,9 +92,11 @@ async function main() {
       data: {
         email: `sales${i + 1}@example.com`,
         password: await bcrypt.hash('sales123', 10),
-        firstName: `Sales${i + 1}`,
-        lastName: 'Representative',
+        firstName: faker.person.firstName(),
+        lastName: faker.person.lastName(),
         role: UserRole.SALES_REP,
+        phoneNumber: faker.phone.number(),
+        profilePicture: faker.image.avatar(),
       },
     })),
   ]);
@@ -122,44 +161,37 @@ async function main() {
 
   // Create companies
   const companies = await Promise.all(
-    Array(5).fill(null).map((_, i) => prisma.company.create({
-      data: {
-        name: `Company ${i + 1}`,
-        industry: randomItem(['Technology', 'Manufacturing', 'Healthcare', 'Finance', 'Retail']),
-        status: randomItem(Object.values(CompanyStatus)),
-        createdById: randomItem(users).id,
-        updatedById: randomItem(users).id,
-        website: `www.company${i + 1}.com`,
-        phone: `+1-555-${String(i + 1).padStart(3, '0')}-0000`,
-      },
-    }))
+    Array(5).fill(null).map(() => 
+      prisma.company.create({
+        data: generateCompanyData(randomItem(users).id, randomItem(users).id),
+      })
+    )
   );
 
   // Create contacts
   const contacts = await Promise.all(
-    Array(15).fill(null).map((_, i) => prisma.contact.create({
-      data: {
-        firstName: `Contact${i + 1}`,
-        lastName: `LastName${i + 1}`,
-        email: `contact${i + 1}@example.com`,
-        phone: `+1-555-${String(i + 1).padStart(3, '0')}-1111`,
-        companyId: randomItem(companies).id,
-        status: randomItem(Object.values(ContactStatus)),
-        createdById: randomItem(users).id,
-        updatedById: randomItem(users).id,
-      },
-    }))
+    Array(15).fill(null).map(() =>
+      prisma.contact.create({
+        data: generateContactData(
+          randomItem(companies).id,
+          randomItem(users).id,
+          randomItem(users).id
+        ),
+      })
+    )
   );
 
   // Create leads
   const leads = await Promise.all(
-    Array(3).fill(null).map((_, i) => prisma.lead.create({
+    Array(3).fill(null).map(() => prisma.lead.create({
       data: {
-        firstName: `Lead${i + 1}`,
-        lastName: `LeadLast${i + 1}`,
-        email: `lead${i + 1}@example.com`,
-        phone: `+1-555-${String(i + 1).padStart(3, '0')}-2222`,
-        companyName: `Lead Company ${i + 1}`,
+        firstName: faker.person.firstName(),
+        lastName: faker.person.lastName(),
+        email: faker.internet.email(),
+        phone: faker.phone.number(),
+        companyName: faker.company.name(),
+        source: faker.helpers.arrayElement(['Website', 'Referral', 'Conference', 'Social Media', 'Direct']),
+        description: faker.lorem.paragraph(),
         status: randomItem(Object.values(LeadStatus)),
         ownerId: randomItem(users).id,
         createdById: randomItem(users).id,
@@ -170,10 +202,10 @@ async function main() {
 
   // Create opportunities
   const opportunities = await Promise.all(
-    Array(5).fill(null).map((_, i) => prisma.opportunity.create({
+    Array(5).fill(null).map(() => prisma.opportunity.create({
       data: {
-        name: `Opportunity ${i + 1}`,
-        amount: Math.floor(Math.random() * 100000) + 10000,
+        name: faker.commerce.productName(),
+        amount: faker.number.float({ min: 10000, max: 1000000, fractionDigits: 2 }),
         stageId: randomItem(stages).id,
         pipelineId: pipeline.id,
         ownerId: randomItem(users).id,
@@ -181,37 +213,38 @@ async function main() {
         contactId: randomItem(contacts).id,
         createdById: randomItem(users).id,
         updatedById: randomItem(users).id,
-        closeDate: randomDate(new Date(), new Date(Date.now() + 90 * 24 * 60 * 60 * 1000)),
+        closeDate: faker.date.future(),
       },
     }))
   );
 
   // Create activities
   await Promise.all(
-    Array(20).fill(null).map((_, i) => prisma.activity.create({
+    Array(20).fill(null).map(() => prisma.activity.create({
       data: {
         type: randomItem(Object.values(ActivityType)),
-        subject: `Activity ${i + 1}`,
-        description: `Description for activity ${i + 1}`,
-        dueDate: randomDate(new Date(), new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)),
-        isCompleted: Math.random() > 0.7,
+        subject: faker.lorem.sentence(),
+        description: faker.lorem.paragraph(),
+        dueDate: faker.date.future(),
+        isCompleted: faker.datatype.boolean(),
         contactId: randomItem(contacts).id,
         companyId: randomItem(companies).id,
-        opportunityId: Math.random() > 0.5 ? randomItem(opportunities).id : null,
+        opportunityId: faker.datatype.boolean() ? randomItem(opportunities).id : null,
         createdById: randomItem(users).id,
         updatedById: randomItem(users).id,
       },
     }))
   );
 
-  // Create tags
-  const tags = await Promise.all([
-    { name: 'Hot Lead', color: '#FF0000' },
-    { name: 'VIP', color: '#FFD700' },
-    { name: 'New', color: '#00FF00' },
-    { name: 'Priority', color: '#0000FF' },
-    { name: 'Follow-up', color: '#800080' },
-  ].map(tag => prisma.tag.create({ data: tag })));
+  // Create tags with more variety
+  const tags = await Promise.all(
+    Array(5).fill(null).map(() => prisma.tag.create({
+      data: {
+        name: faker.word.sample(),
+        color: faker.internet.color(),
+      },
+    }))
+  );
 
   // Assign random tags to companies, contacts, and opportunities
   for (const company of companies) {
