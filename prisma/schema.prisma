@@ -1,0 +1,588 @@
+// schema.prisma
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["relationJoins"] // Enable relation joins for better query performance
+}
+
+generator dbml {
+  provider = "prisma-dbml-generator"
+  output   = "./dbml/schema.dbml"
+}
+
+generator erd {
+  provider                  = "prisma-erd-generator"
+  output                    = "./erd/diagram.svg"
+  tableOnly                 = true
+  ignoreEnums               = true
+  includeRelationFromFields = true
+  includeRelationToFields   = true
+  exclude                   = ["createdAt", "updatedAt", "createdById", "updatedById"]
+  theme                     = "dark"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- Core CRM Entities ---
+
+model User {
+  id             String   @id @default(uuid())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  email          String   @unique
+  password       String
+  firstName      String?
+  lastName       String?
+  role           UserRole @default(SALES_REP)
+  isActive       Boolean  @default(true)
+  phoneNumber    String?
+  profilePicture String?
+
+  // Relationships (Owned Entities)
+  companies     Company[]
+  contacts      Contact[]
+  opportunities Opportunity[]
+  leads         Lead[]
+  activities    Activity[] // Reverted to activities
+  notes         Note[]
+
+  // Relationships (Audit Trail - Who created/updated what)
+  createdCompanies     Company[]             @relation("CompanyCreatedBy")
+  updatedCompanies     Company[]             @relation("CompanyUpdatedBy")
+  createdContacts      Contact[]             @relation("ContactCreatedBy")
+  updatedContacts      Contact[]             @relation("ContactUpdatedBy")
+  createdOpportunities Opportunity[]         @relation("OpportunityCreatedBy")
+  updatedOpportunities Opportunity[]         @relation("OpportunityUpdatedBy")
+  createdLeads         Lead[]                @relation("LeadCreatedBy")
+  updatedLeads         Lead[]                @relation("LeadUpdatedBy")
+  createdActivities    Activity[]            @relation("ActivityCreatedBy")
+  updatedActivities    Activity[]            @relation("ActivityUpdatedBy")
+  createdNotes         Note[]                @relation("NoteCreatedBy")
+  updatedNotes         Note[]                @relation("NoteUpdatedBy")
+  createdProducts      Product[]             @relation("ProductCreatedBy")
+  updatedProducts      Product[]             @relation("ProductUpdatedBy")
+  createdLineItems     LineItem[]            @relation("LineItemCreatedBy")
+  updatedLineItems     LineItem[]            @relation("LineItemUpdatedBy")
+  createdQuotes        Quote[]               @relation("QuoteCreatedBy")
+  updatedQuotes        Quote[]               @relation("QuoteUpdatedBy")
+  // Relationships (User/Team Management)
+  userRoles            UserRoleMapping[]
+  activityParticipants ActivityParticipant[] // Reverted to activityParticipants
+  systemLogs           SystemLog[]
+}
+
+model Company {
+  id                String        @id @default(uuid())
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  name              String        @unique
+  industry          String?
+  website           String?
+  phone             String?
+  addressLine1      String?
+  addressLine2      String?
+  city              String?
+  state             String?
+  postalCode        String?
+  country           String?
+  description       String?
+  annualRevenue     Float?
+  numberOfEmployees Int?
+  status            CompanyStatus @default(ACTIVE)
+
+  // Audit Trail (Foreign Keys to User)
+  createdById String
+  createdBy   User   @relation("CompanyCreatedBy", fields: [createdById], references: [id])
+  updatedById String
+  updatedBy   User   @relation("CompanyUpdatedBy", fields: [updatedById], references: [id])
+
+  // Relationships
+  contacts       Contact[]
+  opportunities  Opportunity[]
+  notes          Note[]
+  activities     Activity[] // Reverted to activities
+  tags           Tag[]         @relation("CompanyToTag")
+  attachments    Attachment[]  @relation("CompanyToAttachment")
+  convertedLeads Lead[]        @relation("ConvertedLeadToCompany")
+  User           User?         @relation(fields: [userId], references: [id])
+  userId         String?
+}
+
+model Contact {
+  id          String        @id @default(uuid())
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  firstName   String
+  lastName    String
+  email       String        @unique
+  phone       String?
+  jobTitle    String?
+  leadSource  String?
+  status      ContactStatus @default(NEW)
+  description String?
+
+  // Audit Trail (Foreign Keys to User)
+  createdById String
+  createdBy   User   @relation("ContactCreatedBy", fields: [createdById], references: [id])
+  updatedById String
+  updatedBy   User   @relation("ContactUpdatedBy", fields: [updatedById], references: [id])
+
+  // Relationships
+  companyId            String?
+  company              Company?              @relation(fields: [companyId], references: [id])
+  opportunities        Opportunity[]
+  activities           Activity[] // Reverted to activities
+  notes                Note[]
+  tags                 Tag[]                 @relation("ContactToTag")
+  attachments          Attachment[]          @relation("ContactToAttachment")
+  convertedFromLead    Lead?                 @relation("ConvertedLeadToContact")
+  activityParticipants ActivityParticipant[] // Reverted to activityParticipants
+  User                 User?                 @relation(fields: [userId], references: [id])
+  userId               String?
+}
+
+model Opportunity {
+  id         String            @id @default(uuid())
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  name       String
+  amount     Float
+  closeDate  DateTime?
+  stageId    String
+  stage      OpportunityStage  @relation(fields: [stageId], references: [id])
+  pipelineId String
+  pipeline   Pipeline          @relation(fields: [pipelineId], references: [id])
+  status     OpportunityStatus @default(OPEN)
+
+  // Audit Trail (Foreign Keys to User)
+  createdById String
+  createdBy   User   @relation("OpportunityCreatedBy", fields: [createdById], references: [id])
+  updatedById String
+  updatedBy   User   @relation("OpportunityUpdatedBy", fields: [updatedById], references: [id])
+
+  // Relationships
+  ownerId           String
+  owner             User         @relation(fields: [ownerId], references: [id])
+  companyId         String
+  company           Company      @relation(fields: [companyId], references: [id])
+  contactId         String?
+  contact           Contact?     @relation(fields: [contactId], references: [id])
+  lineItems         LineItem[]
+  activities        Activity[] // Reverted to activities
+  notes             Note[]
+  tags              Tag[]        @relation("OpportunityToTag")
+  attachments       Attachment[] @relation("OpportunityToAttachment")
+  convertedFromLead Lead?        @relation("ConvertedLeadToOpportunity")
+  quotes            Quote[]
+}
+
+model Lead {
+  id          String     @id @default(uuid())
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  firstName   String?
+  lastName    String?
+  email       String?    @unique(map: "Lead_email_key")
+  phone       String?
+  companyName String?
+  source      String?
+  status      LeadStatus @default(NEW)
+  description String?
+
+  // Audit Trail (Foreign Keys to User)
+  createdById String
+  createdBy   User   @relation("LeadCreatedBy", fields: [createdById], references: [id])
+  updatedById String
+  updatedBy   User   @relation("LeadUpdatedBy", fields: [updatedById], references: [id])
+
+  // Relationships
+  ownerId                  String
+  owner                    User         @relation(fields: [ownerId], references: [id])
+  // Conversion fields
+  convertedToContactId     String?      @unique(map: "Lead_convertedToContactId_key")
+  convertedToContact       Contact?     @relation("ConvertedLeadToContact", fields: [convertedToContactId], references: [id])
+  convertedToCompanyId     String?      @unique(map: "Lead_convertedToCompanyId_key")
+  convertedToCompany       Company?     @relation("ConvertedLeadToCompany", fields: [convertedToCompanyId], references: [id])
+  convertedToOpportunityId String?      @unique(map: "Lead_convertedToOpportunityId_key")
+  convertedToOpportunity   Opportunity? @relation("ConvertedLeadToOpportunity", fields: [convertedToOpportunityId], references: [id])
+  convertedAt              DateTime?
+
+  activities  Activity[]   @relation("LeadToActivity") // Reverted to LeadToActivity
+  notes       Note[]       @relation("LeadToNote")
+  tags        Tag[]        @relation("LeadToTag")
+  attachments Attachment[] @relation("LeadToAttachment")
+}
+
+model Activity {
+  id          String           @id @default(uuid())
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  type        ActivityType // Reverted from InteractionType
+  subject     String
+  description String?
+  dueDate     DateTime? // Can be used for tasks/appointments
+  isCompleted Boolean          @default(false)
+  priority    ActivityPriority @default(NORMAL) // Reverted from TaskPriority
+
+  // Audit Trail (Foreign Keys to User)
+  createdById String
+  createdBy   User   @relation("ActivityCreatedBy", fields: [createdById], references: [id])
+  updatedById String
+  updatedBy   User   @relation("ActivityUpdatedBy", fields: [updatedById], references: [id])
+
+  // Relationships (Polymorphic: An activity can be related to one of several entities)
+  companyId     String?
+  company       Company?     @relation(fields: [companyId], references: [id])
+  contactId     String?
+  contact       Contact?     @relation(fields: [contactId], references: [id])
+  opportunityId String?
+  opportunity   Opportunity? @relation(fields: [opportunityId], references: [id])
+  leadId        String?
+  lead          Lead?        @relation("LeadToActivity", fields: [leadId], references: [id])
+
+  notes       Note[]
+  tags        Tag[]        @relation("ActivityToTag") // Reverted to ActivityToTag
+  attachments Attachment[] @relation("ActivityToAttachment") // Reverted to ActivityToAttachment
+
+  // For multi-user activities (e.g., meeting attendees)
+  participants ActivityParticipant[] // Reverted to ActivityParticipant
+  User         User?                 @relation(fields: [userId], references: [id])
+  userId       String?
+}
+
+model Product {
+  id              String   @id @default(uuid())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  name            String   @unique
+  description     String?
+  price           Float
+  sku             String?  @unique
+  isActive        Boolean  @default(true)
+  productCategory String?
+
+  // Audit trail
+  createdById String?
+  createdBy   User?   @relation("ProductCreatedBy", fields: [createdById], references: [id])
+  updatedById String?
+  updatedBy   User?   @relation("ProductUpdatedBy", fields: [updatedById], references: [id])
+
+  // Relationships
+  lineItems       LineItem[]
+  parentProductId String?
+  parentProduct   Product?   @relation("ProductHierarchy", fields: [parentProductId], references: [id])
+  childProducts   Product[]  @relation("ProductHierarchy")
+}
+
+model LineItem {
+  id                  String      @id @default(uuid())
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+  opportunityId       String
+  opportunity         Opportunity @relation(fields: [opportunityId], references: [id])
+  productId           String
+  product             Product     @relation(fields: [productId], references: [id])
+  quantity            Int
+  unitPriceAtPurchase Float
+
+  // Audit trail
+  createdById String?
+  createdBy   User?   @relation("LineItemCreatedBy", fields: [createdById], references: [id])
+  updatedById String?
+  updatedBy   User?   @relation("LineItemUpdatedBy", fields: [updatedById], references: [id])
+
+  // Link to quotes if dealing with complex quoting
+  quoteId String?
+  quote   Quote?  @relation(fields: [quoteId], references: [id])
+
+  @@unique([opportunityId, productId])
+}
+
+model Note {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  content   String
+
+  // Audit trail
+  authorId    String
+  author      User    @relation("NoteCreatedBy", fields: [authorId], references: [id])
+  updatedById String?
+  updatedBy   User?   @relation("NoteUpdatedBy", fields: [updatedById], references: [id])
+
+  // Polymorphic relationships: A note can be linked to multiple entity types
+  companyId     String?
+  company       Company?     @relation(fields: [companyId], references: [id])
+  contactId     String?
+  contact       Contact?     @relation(fields: [contactId], references: [id])
+  opportunityId String?
+  opportunity   Opportunity? @relation(fields: [opportunityId], references: [id])
+  activityId    String? // Reverted to activityId
+  activity      Activity?    @relation(fields: [activityId], references: [id]) // Reverted to activity
+  leadId        String?
+  lead          Lead?        @relation("LeadToNote", fields: [leadId], references: [id])
+  User          User?        @relation(fields: [userId], references: [id])
+  userId        String?
+}
+
+model Tag {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  name      String   @unique
+  color     String?
+
+  // Many-to-many relationships through implicit many-to-many tables
+  companies     Company[]     @relation("CompanyToTag")
+  contacts      Contact[]     @relation("ContactToTag")
+  opportunities Opportunity[] @relation("OpportunityToTag")
+  activities    Activity[]    @relation("ActivityToTag") // Reverted to activities
+  leads         Lead[]        @relation("LeadToTag")
+}
+
+// --- Sales Pipeline Management ---
+
+model Pipeline {
+  id                String             @id @default(uuid())
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  name              String             @unique
+  description       String?
+  opportunities     Opportunity[]
+  opportunityStages OpportunityStage[]
+}
+
+model OpportunityStage {
+  id         String   @id @default(uuid())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  name       String
+  position   Int
+  isClosed   Boolean  @default(false)
+  isWon      Boolean  @default(false)
+  pipelineId String
+  pipeline   Pipeline @relation(fields: [pipelineId], references: [id])
+
+  opportunities Opportunity[]
+
+  @@unique([pipelineId, name])
+  @@unique([pipelineId, position])
+}
+
+// --- Quoting & Orders (Basic) ---
+model Quote {
+  id             String      @id @default(uuid())
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  opportunityId  String      @unique
+  opportunity    Opportunity @relation(fields: [opportunityId], references: [id])
+  quoteNumber    String      @unique
+  status         QuoteStatus @default(DRAFT)
+  validUntil     DateTime?
+  totalAmount    Float       @default(0.0)
+  discountAmount Float       @default(0.0)
+  taxAmount      Float       @default(0.0)
+  shippingAmount Float       @default(0.0)
+
+  // Audit trail
+  createdById String
+  createdBy   User       @relation("QuoteCreatedBy", fields: [createdById], references: [id])
+  updatedById String?
+  updatedBy   User?      @relation("QuoteUpdatedBy", fields: [updatedById], references: [id])
+  lineItems   LineItem[]
+}
+
+// --- User & Team Management / Territory Management ---
+model Role {
+  id              String            @id @default(uuid())
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  name            String            @unique
+  description     String?
+  userRoleMapping UserRoleMapping[]
+  permissions     Permission[]      @relation
+}
+
+model UserRoleMapping {
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  roleId    String
+  role      Role     @relation(fields: [roleId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@id([userId, roleId])
+}
+
+model Permission {
+  id         String   @id @default(uuid())
+  action     String // e.g., "read", "update", "delete", or ["read", "update"]
+  subject    String? // e.g., "User", "Task", or ["User", "Task"]
+  fields     String[] // Specific fields the role has access to
+  conditions Json? // JSON object for dynamic conditions
+  inverted   Boolean  @default(false) // If true, the permission is a restriction
+  reason     String? // Explanation for restricted permission
+  roleId     String
+  role       Role     @relation(fields: [roleId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+// --- Audit Log / System Activity ---
+model SystemLog {
+  id          String      @id @default(uuid())
+  createdAt   DateTime    @default(now())
+  logType     LogType
+  entityType  EntityType?
+  entityId    String?
+  action      String
+  description String?
+  userId      String?
+  user        User?       @relation(fields: [userId], references: [id])
+  ipAddress   String?
+  oldValue    String?     @db.Text
+  newValue    String?     @db.Text
+}
+
+// --- Activity Participants (for meetings/calls) ---
+model ActivityParticipant {
+  id                String   @id @default(uuid())
+  activityId        String // Reverted from interactionId
+  activity          Activity @relation(fields: [activityId], references: [id]) // Reverted from interaction
+  contactId         String?
+  contact           Contact? @relation(fields: [contactId], references: [id])
+  userId            String?
+  user              User?    @relation(fields: [userId], references: [id])
+  participationRole String?
+
+  @@unique([activityId, contactId])
+  @@unique([activityId, userId])
+}
+
+// --- Attachments ---
+
+model Attachment {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  fileName  String
+  fileUrl   String
+  fileSize  Int?
+  fileType  String?
+
+  // Polymorphic relationships
+  companyId     String?
+  company       Company?     @relation("CompanyToAttachment", fields: [companyId], references: [id])
+  contactId     String?
+  contact       Contact?     @relation("ContactToAttachment", fields: [contactId], references: [id])
+  opportunityId String?
+  opportunity   Opportunity? @relation("OpportunityToAttachment", fields: [opportunityId], references: [id])
+  activityId    String? // Reverted to activityId
+  activity      Activity?    @relation("ActivityToAttachment", fields: [activityId], references: [id]) // Reverted to activity
+  leadId        String?
+  lead          Lead?        @relation("LeadToAttachment", fields: [leadId], references: [id])
+}
+
+// --- Enums ---
+
+enum UserRole {
+  ADMIN
+  SALES_MANAGER
+  SALES_REP
+  GUEST
+}
+
+enum CompanyStatus {
+  ACTIVE
+  INACTIVE
+  PROSPECT
+  CUSTOMER
+  PARTNER
+  SUSPENDED
+}
+
+enum ContactStatus {
+  NEW
+  LEAD
+  QUALIFIED
+  UNQUALIFIED
+  CUSTOMER
+  LOST
+  DO_NOT_CONTACT
+}
+
+enum OpportunityStatus {
+  OPEN
+  WON
+  LOST
+  ON_HOLD
+  QUALIFIED
+}
+
+enum LeadStatus {
+  NEW
+  QUALIFIED
+  UNQUALIFIED
+  CONTACTED
+  DISQUALIFIED
+  CONVERTED
+}
+
+enum ActivityType {
+  CALL
+  MEETING
+  TASK
+  EMAIL
+  OTHER
+  PRESENTATION
+  DEMO
+}
+
+enum ActivityPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum EntityType {
+  COMPANY
+  CONTACT
+  OPPORTUNITY
+  LEAD
+  USER
+}
+
+enum QuoteStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+  REVISED
+  CLOSED
+}
+
+enum LogType {
+  DATA_CHANGE
+  USER_LOGIN
+  API_CALL
+  SYSTEM_ERROR
+  CONFIGURATION_CHANGE
+  SECURITY_EVENT
+}
+
+enum CustomFieldType {
+  TEXT
+  NUMBER
+  DATE
+  BOOLEAN
+  SELECT
+  MULTI_SELECT
+  URL
+  EMAIL
+  PHONE
+  TEXTAREA
+  CURRENCY
+}

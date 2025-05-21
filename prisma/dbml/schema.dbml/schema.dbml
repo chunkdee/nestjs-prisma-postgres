@@ -1,0 +1,654 @@
+//// ------------------------------------------------------
+//// THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+//// ------------------------------------------------------
+
+Table User {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  email String [unique, not null]
+  password String [not null]
+  firstName String
+  lastName String
+  role UserRole [not null, default: 'SALES_REP']
+  isActive Boolean [not null, default: true]
+  phoneNumber String
+  profilePicture String
+  companies Company [not null]
+  contacts Contact [not null]
+  opportunities Opportunity [not null]
+  leads Lead [not null]
+  activities Activity [not null]
+  notes Note [not null]
+  createdCompanies Company [not null]
+  updatedCompanies Company [not null]
+  createdContacts Contact [not null]
+  updatedContacts Contact [not null]
+  createdOpportunities Opportunity [not null]
+  updatedOpportunities Opportunity [not null]
+  createdLeads Lead [not null]
+  updatedLeads Lead [not null]
+  createdActivities Activity [not null]
+  updatedActivities Activity [not null]
+  createdNotes Note [not null]
+  updatedNotes Note [not null]
+  createdProducts Product [not null]
+  updatedProducts Product [not null]
+  createdLineItems LineItem [not null]
+  updatedLineItems LineItem [not null]
+  createdQuotes Quote [not null]
+  updatedQuotes Quote [not null]
+  userRoles UserRoleMapping [not null]
+  activityParticipants ActivityParticipant [not null]
+  systemLogs SystemLog [not null]
+}
+
+Table Company {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  name String [unique, not null]
+  industry String
+  website String
+  phone String
+  addressLine1 String
+  addressLine2 String
+  city String
+  state String
+  postalCode String
+  country String
+  description String
+  annualRevenue Float
+  numberOfEmployees Int
+  status CompanyStatus [not null, default: 'ACTIVE']
+  createdById String [not null]
+  createdBy User [not null]
+  updatedById String [not null]
+  updatedBy User [not null]
+  contacts Contact [not null]
+  opportunities Opportunity [not null]
+  notes Note [not null]
+  activities Activity [not null]
+  tags Tag [not null]
+  attachments Attachment [not null]
+  convertedLeads Lead [not null]
+  User User
+  userId String
+}
+
+Table Contact {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  firstName String [not null]
+  lastName String [not null]
+  email String [unique, not null]
+  phone String
+  jobTitle String
+  leadSource String
+  status ContactStatus [not null, default: 'NEW']
+  description String
+  createdById String [not null]
+  createdBy User [not null]
+  updatedById String [not null]
+  updatedBy User [not null]
+  companyId String
+  company Company
+  opportunities Opportunity [not null]
+  activities Activity [not null]
+  notes Note [not null]
+  tags Tag [not null]
+  attachments Attachment [not null]
+  convertedFromLead Lead
+  activityParticipants ActivityParticipant [not null]
+  User User
+  userId String
+}
+
+Table Opportunity {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  name String [not null]
+  amount Float [not null]
+  closeDate DateTime
+  stageId String [not null]
+  stage OpportunityStage [not null]
+  pipelineId String [not null]
+  pipeline Pipeline [not null]
+  status OpportunityStatus [not null, default: 'OPEN']
+  createdById String [not null]
+  createdBy User [not null]
+  updatedById String [not null]
+  updatedBy User [not null]
+  ownerId String [not null]
+  owner User [not null]
+  companyId String [not null]
+  company Company [not null]
+  contactId String
+  contact Contact
+  lineItems LineItem [not null]
+  activities Activity [not null]
+  notes Note [not null]
+  tags Tag [not null]
+  attachments Attachment [not null]
+  convertedFromLead Lead
+  quotes Quote [not null]
+}
+
+Table Lead {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  firstName String
+  lastName String
+  email String [unique]
+  phone String
+  companyName String
+  source String
+  status LeadStatus [not null, default: 'NEW']
+  description String
+  createdById String [not null]
+  createdBy User [not null]
+  updatedById String [not null]
+  updatedBy User [not null]
+  ownerId String [not null]
+  owner User [not null]
+  convertedToContactId String [unique]
+  convertedToContact Contact
+  convertedToCompanyId String [unique]
+  convertedToCompany Company
+  convertedToOpportunityId String [unique]
+  convertedToOpportunity Opportunity
+  convertedAt DateTime
+  activities Activity [not null]
+  notes Note [not null]
+  tags Tag [not null]
+  attachments Attachment [not null]
+}
+
+Table Activity {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  type ActivityType [not null]
+  subject String [not null]
+  description String
+  dueDate DateTime
+  isCompleted Boolean [not null, default: false]
+  priority ActivityPriority [not null, default: 'NORMAL']
+  createdById String [not null]
+  createdBy User [not null]
+  updatedById String [not null]
+  updatedBy User [not null]
+  companyId String
+  company Company
+  contactId String
+  contact Contact
+  opportunityId String
+  opportunity Opportunity
+  leadId String
+  lead Lead
+  notes Note [not null]
+  tags Tag [not null]
+  attachments Attachment [not null]
+  participants ActivityParticipant [not null]
+  User User
+  userId String
+}
+
+Table Product {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  name String [unique, not null]
+  description String
+  price Float [not null]
+  sku String [unique]
+  isActive Boolean [not null, default: true]
+  productCategory String
+  createdById String
+  createdBy User
+  updatedById String
+  updatedBy User
+  lineItems LineItem [not null]
+  parentProductId String
+  parentProduct Product
+  childProducts Product [not null]
+}
+
+Table LineItem {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  opportunityId String [not null]
+  opportunity Opportunity [not null]
+  productId String [not null]
+  product Product [not null]
+  quantity Int [not null]
+  unitPriceAtPurchase Float [not null]
+  createdById String
+  createdBy User
+  updatedById String
+  updatedBy User
+  quoteId String
+  quote Quote
+
+  indexes {
+    (opportunityId, productId) [unique]
+  }
+}
+
+Table Note {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  content String [not null]
+  authorId String [not null]
+  author User [not null]
+  updatedById String
+  updatedBy User
+  companyId String
+  company Company
+  contactId String
+  contact Contact
+  opportunityId String
+  opportunity Opportunity
+  activityId String
+  activity Activity
+  leadId String
+  lead Lead
+  User User
+  userId String
+}
+
+Table Tag {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  name String [unique, not null]
+  color String
+  companies Company [not null]
+  contacts Contact [not null]
+  opportunities Opportunity [not null]
+  activities Activity [not null]
+  leads Lead [not null]
+}
+
+Table Pipeline {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  name String [unique, not null]
+  description String
+  opportunities Opportunity [not null]
+  opportunityStages OpportunityStage [not null]
+}
+
+Table OpportunityStage {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  name String [not null]
+  position Int [not null]
+  isClosed Boolean [not null, default: false]
+  isWon Boolean [not null, default: false]
+  pipelineId String [not null]
+  pipeline Pipeline [not null]
+  opportunities Opportunity [not null]
+
+  indexes {
+    (pipelineId, name) [unique]
+    (pipelineId, position) [unique]
+  }
+}
+
+Table Quote {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  opportunityId String [unique, not null]
+  opportunity Opportunity [not null]
+  quoteNumber String [unique, not null]
+  status QuoteStatus [not null, default: 'DRAFT']
+  validUntil DateTime
+  totalAmount Float [not null, default: 0]
+  discountAmount Float [not null, default: 0]
+  taxAmount Float [not null, default: 0]
+  shippingAmount Float [not null, default: 0]
+  createdById String [not null]
+  createdBy User [not null]
+  updatedById String
+  updatedBy User
+  lineItems LineItem [not null]
+}
+
+Table Role {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  name String [unique, not null]
+  description String
+  userRoleMapping UserRoleMapping [not null]
+  permissions Permission [not null]
+}
+
+Table UserRoleMapping {
+  userId String [not null]
+  user User [not null]
+  roleId String [not null]
+  role Role [not null]
+  createdAt DateTime [default: `now()`, not null]
+
+  indexes {
+    (userId, roleId) [pk]
+  }
+}
+
+Table Permission {
+  id String [pk]
+  action String [not null]
+  subject String
+  fields String[] [not null]
+  conditions Json
+  inverted Boolean [not null, default: false]
+  reason String
+  roleId String [not null]
+  role Role [not null]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+}
+
+Table SystemLog {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  logType LogType [not null]
+  entityType EntityType
+  entityId String
+  action String [not null]
+  description String
+  userId String
+  user User
+  ipAddress String
+  oldValue String
+  newValue String
+}
+
+Table ActivityParticipant {
+  id String [pk]
+  activityId String [not null]
+  activity Activity [not null]
+  contactId String
+  contact Contact
+  userId String
+  user User
+  participationRole String
+
+  indexes {
+    (activityId, contactId) [unique]
+    (activityId, userId) [unique]
+  }
+}
+
+Table Attachment {
+  id String [pk]
+  createdAt DateTime [default: `now()`, not null]
+  updatedAt DateTime [not null]
+  fileName String [not null]
+  fileUrl String [not null]
+  fileSize Int
+  fileType String
+  companyId String
+  company Company
+  contactId String
+  contact Contact
+  opportunityId String
+  opportunity Opportunity
+  activityId String
+  activity Activity
+  leadId String
+  lead Lead
+}
+
+Table CompanyToTag {
+  tagsId String [ref: > Tag.id]
+  companiesId String [ref: > Company.id]
+}
+
+Table ContactToTag {
+  tagsId String [ref: > Tag.id]
+  contactsId String [ref: > Contact.id]
+}
+
+Table OpportunityToTag {
+  tagsId String [ref: > Tag.id]
+  opportunitiesId String [ref: > Opportunity.id]
+}
+
+Table LeadToTag {
+  tagsId String [ref: > Tag.id]
+  leadsId String [ref: > Lead.id]
+}
+
+Table ActivityToTag {
+  tagsId String [ref: > Tag.id]
+  activitiesId String [ref: > Activity.id]
+}
+
+Enum UserRole {
+  ADMIN
+  SALES_MANAGER
+  SALES_REP
+  GUEST
+}
+
+Enum CompanyStatus {
+  ACTIVE
+  INACTIVE
+  PROSPECT
+  CUSTOMER
+  PARTNER
+  SUSPENDED
+}
+
+Enum ContactStatus {
+  NEW
+  LEAD
+  QUALIFIED
+  UNQUALIFIED
+  CUSTOMER
+  LOST
+  DO_NOT_CONTACT
+}
+
+Enum OpportunityStatus {
+  OPEN
+  WON
+  LOST
+  ON_HOLD
+  QUALIFIED
+}
+
+Enum LeadStatus {
+  NEW
+  QUALIFIED
+  UNQUALIFIED
+  CONTACTED
+  DISQUALIFIED
+  CONVERTED
+}
+
+Enum ActivityType {
+  CALL
+  MEETING
+  TASK
+  EMAIL
+  OTHER
+  PRESENTATION
+  DEMO
+}
+
+Enum ActivityPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+Enum EntityType {
+  COMPANY
+  CONTACT
+  OPPORTUNITY
+  LEAD
+  USER
+}
+
+Enum QuoteStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+  REVISED
+  CLOSED
+}
+
+Enum LogType {
+  DATA_CHANGE
+  USER_LOGIN
+  API_CALL
+  SYSTEM_ERROR
+  CONFIGURATION_CHANGE
+  SECURITY_EVENT
+}
+
+Enum CustomFieldType {
+  TEXT
+  NUMBER
+  DATE
+  BOOLEAN
+  SELECT
+  MULTI_SELECT
+  URL
+  EMAIL
+  PHONE
+  TEXTAREA
+  CURRENCY
+}
+
+Ref: Company.createdById > User.id
+
+Ref: Company.updatedById > User.id
+
+Ref: Company.userId > User.id
+
+Ref: Contact.createdById > User.id
+
+Ref: Contact.updatedById > User.id
+
+Ref: Contact.companyId > Company.id
+
+Ref: Contact.userId > User.id
+
+Ref: Opportunity.stageId > OpportunityStage.id
+
+Ref: Opportunity.pipelineId > Pipeline.id
+
+Ref: Opportunity.createdById > User.id
+
+Ref: Opportunity.updatedById > User.id
+
+Ref: Opportunity.ownerId > User.id
+
+Ref: Opportunity.companyId > Company.id
+
+Ref: Opportunity.contactId > Contact.id
+
+Ref: Lead.createdById > User.id
+
+Ref: Lead.updatedById > User.id
+
+Ref: Lead.ownerId > User.id
+
+Ref: Lead.convertedToContactId - Contact.id
+
+Ref: Lead.convertedToCompanyId > Company.id
+
+Ref: Lead.convertedToOpportunityId - Opportunity.id
+
+Ref: Activity.createdById > User.id
+
+Ref: Activity.updatedById > User.id
+
+Ref: Activity.companyId > Company.id
+
+Ref: Activity.contactId > Contact.id
+
+Ref: Activity.opportunityId > Opportunity.id
+
+Ref: Activity.leadId > Lead.id
+
+Ref: Activity.userId > User.id
+
+Ref: Product.createdById > User.id
+
+Ref: Product.updatedById > User.id
+
+Ref: Product.parentProductId - Product.id
+
+Ref: LineItem.opportunityId > Opportunity.id
+
+Ref: LineItem.productId > Product.id
+
+Ref: LineItem.createdById > User.id
+
+Ref: LineItem.updatedById > User.id
+
+Ref: LineItem.quoteId > Quote.id
+
+Ref: Note.authorId > User.id
+
+Ref: Note.updatedById > User.id
+
+Ref: Note.companyId > Company.id
+
+Ref: Note.contactId > Contact.id
+
+Ref: Note.opportunityId > Opportunity.id
+
+Ref: Note.activityId > Activity.id
+
+Ref: Note.leadId > Lead.id
+
+Ref: Note.userId > User.id
+
+Ref: OpportunityStage.pipelineId > Pipeline.id
+
+Ref: Quote.opportunityId > Opportunity.id
+
+Ref: Quote.createdById > User.id
+
+Ref: Quote.updatedById > User.id
+
+Ref: UserRoleMapping.userId > User.id
+
+Ref: UserRoleMapping.roleId > Role.id
+
+Ref: Permission.roleId > Role.id
+
+Ref: SystemLog.userId > User.id
+
+Ref: ActivityParticipant.activityId > Activity.id
+
+Ref: ActivityParticipant.contactId > Contact.id
+
+Ref: ActivityParticipant.userId > User.id
+
+Ref: Attachment.companyId > Company.id
+
+Ref: Attachment.contactId > Contact.id
+
+Ref: Attachment.opportunityId > Opportunity.id
+
+Ref: Attachment.activityId > Activity.id
+
+Ref: Attachment.leadId > Lead.id
