@@ -1,4 +1,4 @@
-# MyCrm
+# My CRM
 
 <a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
 
@@ -80,3 +80,175 @@ And join the Nx community:
 - [Follow us on X](https://twitter.com/nxdevtools) or [LinkedIn](https://www.linkedin.com/company/nrwl)
 - [Our Youtube channel](https://www.youtube.com/@nxdevtools)
 - [Our blog](https://nx.dev/blog?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+
+# My CRM
+
+A modern CRM system built with NestJS, Prisma, and PostgreSQL.
+
+## Features
+
+- User Management & Authentication
+- Company/Contact Management
+- Lead Management
+- Opportunity/Pipeline Management
+- Activity Tracking
+- Note Management
+- File Attachments
+- Tagging System
+- Custom Fields
+- Audit Logging
+
+## Tech Stack
+
+- NestJS - Backend Framework
+- Prisma - ORM
+- PostgreSQL - Database
+- TypeScript
+- JSON Server (for development)
+
+## Prerequisites
+
+- Node.js (v16 or higher)
+- PostgreSQL
+- Docker (optional)
+
+## Getting Started
+
+1. Clone the repository
+2. Install dependencies:
+```bash
+npm install
+```
+
+3. Set up environment variables:
+```bash
+cp .env.example .env
+```
+
+4. Update DATABASE_URL in .env with your PostgreSQL connection string
+
+5. Initialize the database:
+```bash
+npm run prisma:migrate
+npm run prisma:generate
+```
+
+6. Seed the database:
+```bash
+npm run prisma:seed
+```
+
+## Development
+
+### Available Scripts
+
+- `npm run prisma:generate` - Generate Prisma Client
+- `npm run prisma:migrate` - Run database migrations
+- `npm run prisma:studio` - Open Prisma Studio
+- `npm run prisma:format` - Format Prisma schema
+- `npm run prisma:seed` - Seed the database with sample data
+- `npm run generate:mock` - Generate mock data for JSON Server
+- `npm run json-server` - Start JSON Server with mock data
+
+### Using JSON Server for Development
+
+1. Generate mock data:
+```bash
+npm run generate:mock
+```
+
+2. Start JSON Server:
+```bash
+npm run json-server
+```
+
+Access the mock API at `http://localhost:3000`
+
+### Available Endpoints
+
+The following REST endpoints are available:
+
+#### Core Entities
+- `GET/POST/PUT/DELETE /users` - User management
+- `GET/POST/PUT/DELETE /companies` - Company management
+- `GET/POST/PUT/DELETE /contacts` - Contact management
+- `GET/POST/PUT/DELETE /opportunities` - Opportunity management
+- `GET/POST/PUT/DELETE /leads` - Lead management
+- `GET/POST/PUT/DELETE /activities` - Activity management
+
+#### Supporting Entities
+- `GET/POST/PUT/DELETE /pipeline` - Pipeline configuration
+- `GET/POST/PUT/DELETE /stages` - Pipeline stages
+- `GET/POST/PUT/DELETE /tags` - Tags management
+- `GET/POST/PUT/DELETE /notes` - Notes management
+- `GET/POST/PUT/DELETE /lineItems` - Line items for opportunities
+
+#### Filtering Examples
+```bash
+# Filter contacts by company
+GET /contacts?companyId=1
+
+# Filter activities by type
+GET /activities?type=MEETING
+
+# Search companies by name
+GET /companies?name_like=Acme
+
+# Paginate results
+GET /contacts?_page=1&_limit=10
+
+# Sort opportunities by amount
+GET /opportunities?_sort=amount&_order=desc
+```
+
+#### Embedding Relationships
+```bash
+# Get contacts with their company data
+GET /contacts?_embed=company
+
+# Get companies with their contacts
+GET /companies?_embed=contacts
+
+# Get opportunities with related entities
+GET /opportunities?_embed=contact&_embed=company&_embed=lineItems
+
+# Get activities with participants
+GET /activities?_embed=activityParticipants
+
+# Get opportunities with multiple levels
+GET /opportunities?_embed=lineItems&_expand=contact&_expand=company
+
+# Get contacts with their activities and company
+GET /contacts?_embed=activities&_expand=company
+
+# Get companies with full relationship tree
+GET /companies?_embed=contacts&_embed=opportunities&_embed=activities
+```
+
+### Database Schema Visualization
+
+The project includes ERD generation. After making schema changes:
+
+1. Generate ERD:
+```bash
+npm run prisma:generate
+```
+
+2. View the diagram at `./prisma/erd/diagram.svg`
+
+## Project Structure
+
+```
+my-crm/
+├── prisma/
+│   ├── schema.prisma    # Database schema
+│   ├── seed.ts         # Database seeder
+│   └── erd/           # Generated ERD diagrams
+├── scripts/
+│   └── generate-mock-data.ts  # Mock data generator
+└── src/               # Application source code
+```
+
+## License
+
+MIT
