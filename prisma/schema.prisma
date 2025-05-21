@@ -220,7 +220,7 @@ model Activity {
   id          String           @id @default(uuid())
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
-  type        ActivityType // Reverted from InteractionType
+  type        ActivityType @default(EMAIL)
   subject     String
   description String?
   dueDate     DateTime? // Can be used for tasks/appointments
@@ -449,8 +449,8 @@ model SystemLog {
 // --- Activity Participants (for meetings/calls) ---
 model ActivityParticipant {
   id                String   @id @default(uuid())
-  activityId        String // Reverted from interactionId
-  activity          Activity @relation(fields: [activityId], references: [id]) // Reverted from interaction
+  activityId        String  
+  activity          Activity @relation(fields: [activityId], references: [id]) 
   contactId         String?
   contact           Contact? @relation(fields: [contactId], references: [id])
   userId            String?
@@ -486,6 +486,8 @@ model Attachment {
 }
 
 // --- Enums ---
+// Enums for various statuses and types
+// These enums can be extended as needed.
 
 enum UserRole {
   ADMIN
